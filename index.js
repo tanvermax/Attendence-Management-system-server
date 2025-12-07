@@ -86,11 +86,11 @@ app.post('/attendance', async (req, res) => {
 //   }
 // })
 app.get('/attendance', async (req, res) => {
-  const [attendance,student] = await Promise.all([
+  const [attendance, student] = await Promise.all([
     Attendance.find(),
     Student.find(),
   ]);
-  res.status(201).json({attendance,student});
+  res.status(201).json({ attendance, student });
 });
 // class persubject
 
@@ -108,6 +108,29 @@ app.get('/new-classpersubject', async (req, res) => {
   const classperSub = await ClassperSub.find();
   res.json(classperSub);
 });
+
+app.put("/new-classpersubject/:id", async (req, res) => {
+  try {
+    console.log("Body:", req.body);
+
+    const updated = await ClassperSub.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
+    res.status(200).json(updated);
+
+  } catch (err) {
+    console.log("Update error:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 app.delete("/new-classpersubject/:id", async (req, res) => {
   try {
     const id = req.params.id;
@@ -147,7 +170,9 @@ app.get("/classpersubject", async (req, res) => {
       error: error.message
     });
   }
-})
+});
+
+
 // student
 
 app.post('/student', async (req, res) => {
@@ -167,6 +192,33 @@ app.post('/student', async (req, res) => {
 app.get('/student', async (req, res) => {
   const student = await Student.find();
   res.json(student);
+});
+
+app.put("/student/:id", async (req, res) => {
+  try {
+    const { name, class: studentClass } = req.body;
+
+    const student = await Student.findByIdAndUpdate(
+      req.params.id,
+      { name, class: studentClass },
+      { new: true, runValidators: true }
+    );
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    return res.status(200).json(student);
+
+  } catch (error) {
+
+    // Duplicate error on update
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "Duplicate SID" });
+    }
+
+    return res.status(500).json({ message: error.message });
+  }
 });
 
 app.delete("/student/:id", async (req, res) => {
@@ -207,6 +259,23 @@ app.get('/faculty', async (req, res) => {
   const faculty = await Faculty.find();
   res.json(faculty);
 });
+app.put("/faculty/:id", async (req, res) => {
+  try {
+    const result = await Faculty.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: "Faculty updated successfully",
+      data: result,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update" });
+  }
+});
 
 app.delete("/faculty/:id", async (req, res) => {
   try {
@@ -226,6 +295,8 @@ app.delete("/faculty/:id", async (req, res) => {
 app.post('/class', async (req, res) => {
   try {
     const clas = new Class(req.body);
+
+
     const saved = await clas.save();
     res.status(201).json(saved);
   } catch (err) {
@@ -236,6 +307,23 @@ app.post('/class', async (req, res) => {
 app.get('/class', async (req, res) => {
   const classs = await Class.find();
   res.json(classs);
+});
+app.put("/class/:id", async (req, res) => {
+  try {
+    const updatedClass = await Class.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true } 
+    );
+
+    res.json({
+      success: true,
+      message: "Class updated successfully",
+      data: updatedClass,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update class" });
+  }
 });
 
 app.delete("/class/:id", async (req, res) => {
@@ -263,6 +351,19 @@ app.post('/subject', async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+app.put("/subject/:id", async (req, res) => {
+  const { id } = req.params;
+  const { subject, description } = req.body;
+
+  const updated = await Subject.findByIdAndUpdate(
+    id,
+    { subject, description },
+    { new: true }
+  );
+
+  res.json(updated);
+});
+
 
 app.get('/subject', async (req, res) => {
   const subject = await Subject.find();
@@ -315,6 +416,18 @@ app.delete("/course/:id", async (req, res) => {
   }
 })
 
+app.put("/course/:id", async (req, res) => {
+  const { id } = req.params;
+  const { subject, description } = req.body;
+
+  const updated = await Course.findByIdAndUpdate(
+    id,
+    { subject, description },
+    { new: true }
+  );
+
+  res.json(updated);
+});
 
 
 // user data
@@ -333,8 +446,6 @@ app.get('/user', async (req, res) => {
   res.json(uers);
 });
 
-
-
 app.delete("/user/:id", async (req, res) => {
   try {
     const id = req.params.id;
@@ -347,9 +458,6 @@ app.delete("/user/:id", async (req, res) => {
     console.log("error user data deleteing procces", error)
   }
 })
-
-
-
 
 app.post('/login', async (req, res) => {
   const { email, password, role } = req.body;
@@ -371,7 +479,6 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
-
 
 // Import and use user routes (optional)
 // const userRoutes = require('./routes/userRoutes');

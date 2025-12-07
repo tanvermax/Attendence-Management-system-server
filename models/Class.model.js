@@ -13,6 +13,6 @@ const classSchema = new mongoose.Schema({
 })
 
 
-
+classSchema.index({ subject: 1, year: 1, semester: 1 }, { unique: true });
  const Class = mongoose.model('Class', classSchema);
 module.exports = Class;
