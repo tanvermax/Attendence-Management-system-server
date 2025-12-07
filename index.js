@@ -51,40 +51,40 @@ app.get("/check-atttendence", async (req, res) => {
 // aAttendance
 app.post('/attendance', async (req, res) => {
   try {
+    const { date, classId } = req.body;
 
-    const attendance = new Attendance(req.body);
+    // Default date: today (ignore time)
+    const currentDate = date ? new Date(date) : new Date();
+    currentDate.setHours(0, 0, 0, 0);
+
+    // Check if attendance already exists for this date + class
+    const existing = await Attendance.findOne({
+      classId,
+      date: currentDate
+    });
+
+    if (existing) {
+      return res.status(409).json({
+        message: "Attendance already taken for this day"
+      });
+    }
+
+    // Save new attendance
+    const attendance = new Attendance({
+      ...req.body,
+      date: currentDate
+    });
+
     const saved = await attendance.save();
     res.status(201).json(saved);
+
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-// app.get("/classpersubject", async (req, res) => {
-//   try {
-//     const [classes, subjects, faculties] = await Promise.all([
-//       Class.find(),
-//       Subject.find(),
-//       Faculty.find()]);
 
-//     res.status(201).json({
-//       success: true,
-//       message: "3 combine data",
-//       data: {
-//         classes,
-//         subjects,
-//         faculties
-//       }
-//     })
 
-//   } catch (error) {
-//     res.status(500).json({
-//       success: false,
-//       message: 'Failed to fetch combined data',
-//       error: error.message
-//     });
-//   }
-// })
 app.get('/attendance', async (req, res) => {
   const [attendance, student] = await Promise.all([
     Attendance.find(),
